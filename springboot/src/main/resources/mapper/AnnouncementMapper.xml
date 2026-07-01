@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mapper.AnnouncementMapper">
+
+    <!--
+       查询公告列表（支持多条件动态筛选）
+       支持条件：标题模糊查询、发布人ID精确匹配、状态精确匹配
+       排序规则：按发布时间倒序（最新发布的公告排在前面）
+   -->
+    <select id="selectList" resultType="com.example.entity.Announcement">
+        select * from announcement
+        <where>
+            <!-- 标题模糊查询，使用concat实现前后模糊匹配 -->
+            <if test="announcement.title != null and announcement.title != ''">
+               and title like concat('%', #{announcement.title}, '%')
+            </if>
+            <!-- 按发布人ID筛选 -->
+            <if test="announcement.publisherId != null">
+                and publisher_id = #{announcement.publisherId}
+            </if>
+            <!-- 按公告状态筛选（待发布/已发布/已撤回） -->
+            <if test="announcement.status != null and announcement.status != ''">
+                and status = #{announcement.status}
+            </if>
+        </where>
+        order by publish_time desc
+    </select>
+
+    <!--
+     新增公告记录
+     使用useGeneratedKeys获取自增主键ID并回填到实体对象中
+     插入字段：标题、内容、发布人信息、状态
+ -->
+    <insert id="insert" parameterType="com.example.entity.Announcement">
+        insert into announcement(title, content, publisher_id, publisher_name, publish_time, status)
+        values(#{title}, #{content}, #{publisherId},
+        #{publisherName}, #{publishTime}, #{status})
+    </insert>
+
+
+    <!--
+       更新公告信息
+       使用动态SQL实现部分字段更新（只更新非空字段）
+       可更新的字段包括：标题、内容、状态
+   -->
+    <update id="update" parameterType="com.example.entity.Announcement">
+        update announcement
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--
+       根据主键ID删除公告记录（物理删除）
+       删除后不可恢复，调用前应提供确认提示
+   -->
+    <delete id="deleteById" parameterType="integer">
+        delete from announcement where id = #{id}
+    </delete>
+</mapper>

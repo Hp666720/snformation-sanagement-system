@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.AdminMapper">
+
+    <select id="selectAdminList" resultType="com.example.entity.Admin">
+        select * from admin
+        <where>
+            <if test="username != null">
+                username like concat('%',#{username},'%')
+            </if>
+            <if test="name != null and name != ''">
+                and name like concat('%',#{name},'%')
+            </if>
+            <if test="ids != null ">
+                and id in
+                <foreach item="id" collection="ids" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="role != null and role != ''">
+                and role = #{role}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+
+    <select id="selectAdmin" resultType="com.example.entity.Admin" >
+        select * from admin
+        <where>
+            <if test="username != null">
+                username = #{username}
+            </if>
+            <if test="role != null">
+                and role = #{role}
+            </if>
+        </where>
+
+    </select>
+
+    <insert id="insertAdmin" parameterType="com.example.entity.Admin">
+        insert into admin
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="username != null">username,</if>
+            <if test="password != null">password,</if>
+            <if test="email != null">email,</if>
+            <if test="phone != null">phone,</if>
+            <if test="name != null">name,</if>
+            <if test="role != null">role,</if>
+            <if test="avatar != null">avatar,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="username != null">#{username},</if>
+            <if test="password != null">#{password},</if>
+            <if test="email != null">#{email},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="name != null">#{name},</if>
+            <if test="role != null">#{role},</if>
+            <if test="avatar != null">#{avatar},</if>
+        </trim>
+    </insert>
+
+    <update id="updateAdmin" parameterType="com.example.entity.Admin">
+        update admin
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="role != null">role = #{role},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <delete id="deleteAdmin" parameterType="java.lang.Integer">
+        delete from admin where id = #{id}
+    </delete>
+
+    <select id="getListAdmin" resultType="com.example.entity.Admin">
+        select * from admin
+        <where>
+            <if test="username != null">
+                username like concat('%', #{username}, '%')
+            </if>
+            <if test="name != null">
+                and name like concat('%', #{name}, '%')
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+
+    <delete id="deleteBatch">
+        delete from admin where id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="getById" resultType="com.example.entity.Admin">
+        select * from admin where id = #{id}
+    </select>
+
+    <select id="selectAdminByName" parameterType="java.lang.String" resultType="com.example.entity.Admin">
+        select * from admin where username=#{username}
+    </select>
+
+    <select id="selectAdminById" parameterType="java.lang.Integer" resultType="com.example.entity.Admin">
+        select * from admin where id=#{id}
+    </select>
+
+
+</mapper>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    请假申请SQL映射文件
+    定义对leave_request表的所有数据库操作
+    命名空间对应LeaveRequestMapper接口的全限定类名
+-->
+<mapper namespace="com.example.mapper.LeaveRequestMapper">
+
+    <!--
+       查询请假申请列表（支持多条件动态筛选）
+       支持条件：标题模糊查询、请求人ID精确匹配、审核人ID精确匹配、状态精确匹配
+       排序规则：按提交时间倒序（最新的记录排在前面）
+   -->
+    <select id="selectList" resultType="com.example.entity.LeaveRequest">
+        select * from leave_request
+        <where>
+            <!-- 标题模糊查询，使用concat实现前后模糊匹配 -->
+            <if test="leaveRequest.title != null and leaveRequest.title != ''">
+                and title like concat('%', #{leaveRequest.title}, '%')
+            </if>
+            <!-- 按请求人ID筛选（普通用户查询自己的申请时使用） -->
+            <if test="leaveRequest.requesterId != null">
+                and requester_id = #{leaveRequest.requesterId}
+            </if>
+            <!-- 按审核人ID筛选（管理员查询分配给自己的申请时使用） -->
+            <if test="leaveRequest.reviewerId != null">
+                and reviewer_id = #{leaveRequest.reviewerId}
+            </if>
+            <!-- 按审核状态筛选（待审核/已审核/审核拒绝） -->
+            <if test="leaveRequest.status != null and leaveRequest.status != ''">
+                and status = #{leaveRequest.status}
+            </if>
+        </where>
+        order by submit_time desc
+    </select>
+
+    <!--
+       新增请假申请记录
+       使用useGeneratedKeys获取自增主键ID并回填到实体对象中
+       插入字段：标题、说明、请求人信息、审核人信息、初始状态
+   -->
+    <insert id="insert" parameterType="com.example.mapper.LeaveRequestMapper">
+        insert into leave_request (title, description, requester_id, requester_name, reviewer_id, reviewer_name, status)
+        values (#{title}, #{description}, #{requesterId}, #{requesterName}, #{reviewerId}, #{reviewerName}, #{status})
+    </insert>
+
+    <!--
+     更新请假申请信息
+     使用动态SQL实现部分字段更新（只更新非空字段）
+     可更新的字段包括：标题、说明、状态、审核说明、审批时间
+ -->
+    <update id="update" parameterType="com.example.mapper.LeaveRequestMapper">
+        update leave_request
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="reviewComment != null">review_comment = #{reviewComment},</if>
+            <if test="reviewTime != null">review_time = #{reviewTime},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--
+       根据主键ID删除请假申请记录（物理删除）
+       删除前应在Service或Controller层校验状态权限
+   -->
+    <delete id="deleteById" parameterType="integer">
+        delete from leave_request where id = #{id}
+    </delete>
+
+    <!-- 统计指定年月的请假数量 -->
+    <select id="countByMonth" resultType="int">
+        select count(*) from leave_request
+        where YEAR(submit_time) = #{year}
+        and MONTH(submit_time) = #{month}
+        <if test="requesterId != null">
+            and requester_id = #{requesterId}
+        </if>
+    </select>
+
+    <select id="selectById" resultType="com.example.entity.LeaveRequest">
+        select * from leave_request where id=#{id}
+    </select>
+</mapper>
+
